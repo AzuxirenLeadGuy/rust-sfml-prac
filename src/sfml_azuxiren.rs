@@ -11,30 +11,46 @@ pub struct WindowSettings {
     pub style: Style,
     pub context_settings: ContextSettings,
 }
-pub trait GameScreen<GameConstants> {
-    fn init(&mut self, constants: &GameConstants) -> u8;
-    fn update(&mut self, delta_time_ms: i32) -> u8;
-    fn draw(&self, window: &mut RenderWindow) -> u8;
-    fn background_color(&self) -> Color;
-    fn change_screen(
-        &mut self,
-        constants: &mut GameConstants,
-    ) -> Box<dyn GameScreen<GameConstants>>;
+
+impl Default for WindowSettings {
+    fn default() -> Self {
+        Self {
+            title: String::from("SFML Rust game"),
+            size: (800, 600),
+            style: Style::DEFAULT,
+            context_settings: ContextSettings::default(),
+        }
+    }
 }
 
-pub struct CoreSfmlGame<GameConstants> {
+pub trait ScreenEnum<GameConstants, ScreenEnumType>: Default {
+    fn init(&mut self, constants: &GameConstants) -> u8;
+    fn update(
+        &mut self,
+        constants: &mut GameConstants,
+        delta_time_ms: i32,
+    ) -> Option<ScreenEnumType>;
+    fn draw(&self, window: &mut RenderWindow) -> u8;
+    fn background_color(&self) -> Color;
+}
+
+pub struct CoreSfmlGameEnum<GameConstants, ScreenEnumType>
+where
+    ScreenEnumType: ScreenEnum<GameConstants, ScreenEnumType>,
+{
     pub clock: SfBox<Clock>,
-    pub running_screen: Box<dyn GameScreen<GameConstants>>,
-    pub load_screen: Box<dyn GameScreen<GameConstants>>,
+    pub running_screen: ScreenEnumType,
+    pub load_screen: ScreenEnumType,
     pub is_loading: bool,
     pub window: RenderWindow,
     pub settings: GameConstants,
 }
-impl<GameConstants> CoreSfmlGame<GameConstants> {
-    fn change_screen(&mut self) {
-        self.is_loading = true;
-        // TODO make parallel thread to load other screen
-        self.running_screen = self.running_screen.change_screen(&mut self.settings);
+
+impl<GameConstants, ScreenEnumType> CoreSfmlGameEnum<GameConstants, ScreenEnumType>
+where
+    ScreenEnumType: ScreenEnum<GameConstants, ScreenEnumType>,
+{
+    async fn screen_loader(&mut self) {
         self.running_screen.init(&self.settings);
         self.is_loading = false;
     }
@@ -43,9 +59,8 @@ impl<GameConstants> CoreSfmlGame<GameConstants> {
     }
     fn run_frame(&mut self) {
         while let Some(event) = self.window.poll_event() {
-            match event {
-                Event::Closed => self.exit(),
-                _ => {}
+            if event == Event::Closed {
+                self.exit();
             }
         }
         let delta_time_ms = self.clock.restart().as_milliseconds();
@@ -54,10 +69,15 @@ impl<GameConstants> CoreSfmlGame<GameConstants> {
         } else {
             &mut self.running_screen
         };
-        cur_screen.update(delta_time_ms);
+        let change_screen = cur_screen.update(&mut self.settings, delta_time_ms);
         self.window.clear(cur_screen.background_color());
         cur_screen.draw(&mut self.window);
         self.window.display();
+        if let Some(x) = change_screen {
+            self.is_loading = true;
+            self.running_screen = x;
+            _ = self.screen_loader();
+        }
     }
     pub fn run_game(&mut self) {
         while self.window.is_open() {
@@ -66,18 +86,21 @@ impl<GameConstants> CoreSfmlGame<GameConstants> {
     }
 }
 
-pub fn create_sfml_game_object<GameConstants>(
+pub fn create_sfml_game_object<GameConstants, ScreenEnumType>(
     window_settings: WindowSettings,
     settings: GameConstants,
-    running_screen:Box<dyn GameScreen<GameConstants>>,
-    load_screen: Box<dyn GameScreen<GameConstants>>,
-)->CoreSfmlGame<GameConstants> {
+    running_screen: ScreenEnumType,
+    load_screen: ScreenEnumType,
+) -> CoreSfmlGameEnum<GameConstants, ScreenEnumType>
+where
+    ScreenEnumType: ScreenEnum<GameConstants, ScreenEnumType>,
+{
     let mut running_screen = running_screen;
     running_screen.init(&settings);
     let mut load_screen = load_screen;
     load_screen.init(&settings);
 
-    let game = CoreSfmlGame {
+    CoreSfmlGameEnum {
         clock: Clock::start(),
         is_loading: false,
         window: RenderWindow::new(
@@ -89,6 +112,5 @@ pub fn create_sfml_game_object<GameConstants>(
         running_screen,
         load_screen,
         settings,
-    };
-    return game;
+    }
 }
