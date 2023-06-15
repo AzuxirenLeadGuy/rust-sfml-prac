@@ -3,9 +3,10 @@ use sfml::{
         Color, FloatRect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
     },
     system::Vector2f,
+    window::{Event, Key},
 };
 
-use crate::sfml_azuxiren::ScreenEnum;
+use azux_sfml::{ScreenEnum, UpdateResult};
 
 pub struct RectGameConstants {
     pub rect_size_ratio: f32,
@@ -89,16 +90,39 @@ impl<'a> ScreenEnum<RectGameConstants, RectGameScreenEnum<'a>> for RunScreenObje
     fn update(
         &mut self,
         _constants: &mut RectGameConstants,
+        event_list: &Vec<Event>,
         _delta_time_ms: i32,
-    ) -> Option<RectGameScreenEnum<'a>> {
+    ) -> UpdateResult<RectGameScreenEnum<'a>> {
         self.player
             .update(Vector2f { x: 0., y: 0. }, 0., Some(&self.screen));
         self.player.texture.set_position(self.player.pos);
-        None
+        for ev in event_list {
+            match ev {
+                Event::KeyPressed { code, .. } => {
+                    if *code == Key::Escape {
+                        return UpdateResult::ExitGame;
+                    } else if *code == Key::Space {
+                        self.player.vel = -self.player.vel;
+                    }
+                },
+                Event::JoystickButtonPressed { button,.. } => {
+                    if *button == 0 {
+                        self.player.vel *= 1.5;
+                    }
+                },
+                Event::JoystickConnected { joystickid } =>
+                {
+                    println!("Joystick id {joystickid} detected");
+                },
+                _ => (),
+            }
+        }
+        UpdateResult::NoChange
     }
 
     fn draw(&self, window: &mut RenderWindow) -> u8 {
         window.draw(&self.player.texture);
+        // window.draw_text(String::from("Hello"), RenderStates{});
         0
     }
 
@@ -118,11 +142,12 @@ impl<'a> ScreenEnum<RectGameConstants, RectGameScreenEnum<'a>> for RectGameScree
     fn update(
         &mut self,
         constants: &mut RectGameConstants,
+        event_list: &Vec<Event>,
         delta_time_ms: i32,
-    ) -> Option<RectGameScreenEnum<'a>> {
+    ) -> UpdateResult<RectGameScreenEnum<'a>> {
         match self {
-            RectGameScreenEnum::RunScreen(x) => x.update(constants, delta_time_ms),
-            RectGameScreenEnum::LoadScreen => None,
+            RectGameScreenEnum::RunScreen(x) => x.update(constants, event_list, delta_time_ms),
+            RectGameScreenEnum::LoadScreen => UpdateResult::NoChange,
         }
     }
 

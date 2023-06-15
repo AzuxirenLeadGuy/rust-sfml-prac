@@ -1,0 +1,11 @@
+[package]
+name = "blok"
+version = "0.1.1"
+edition = "2021"
+authors = ["AzuxirenLeadGuy"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+azux_sfml = {path="../azux_sfml"}
+sfml = "0.20.0"

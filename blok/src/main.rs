@@ -1,8 +1,7 @@
 mod core_game;
-mod sfml_azuxiren;
 use core_game::{RectGameConstants, RectGameScreenEnum};
 use sfml::{graphics::Color, system::Vector2f};
-use sfml_azuxiren::{create_sfml_game_object, WindowSettings};
+use azux_sfml::{create_sfml_game_object, WindowSettings};
 
 fn main() {
     let game = (640, 480);
