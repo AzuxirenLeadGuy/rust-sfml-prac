@@ -1,6 +1,6 @@
 mod core_game;
 use core_game::{RectGameConstants, RectGameScreenEnum};
-use sfml::{graphics::Color, system::Vector2f};
+use sfml::{graphics::{Color, Texture}, system::Vector2f};
 use azux_sfml::{create_sfml_game_object, WindowSettings};
 
 fn main() {
@@ -15,10 +15,11 @@ fn main() {
             rect_size_ratio: 0.04,
             player_color: Color::CYAN,
             screen_size: game,
-            start_vel: Vector2f { x: 0.01, y: 0.02 },
+            start_vel: Vector2f { x: 1., y: 2. },
         },
         RectGameScreenEnum::RunScreen(Default::default()),
         RectGameScreenEnum::LoadScreen,
+        60
     );
     game.run_game();
 }
