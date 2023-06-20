@@ -1,9 +1,9 @@
 use sfml::{
     graphics::{
-        Color, FloatRect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
+        Color, FloatRect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable, Sprite, Texture, Image,
     },
     system::Vector2f,
-    window::{Event, Key},
+    window::{Event, Key}, SfBox,
 };
 
 use azux_sfml::{ScreenEnum, UpdateResult};
