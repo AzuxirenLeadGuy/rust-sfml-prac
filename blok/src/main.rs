@@ -1,6 +1,6 @@
 mod core_game;
 use core_game::{RectGameConstants, RectGameScreenEnum};
-use sfml::{graphics::{Color, Texture}, system::Vector2f};
+use sfml::{graphics::{Color}, system::Vector2f};
 use azux_sfml::{create_sfml_game_object, WindowSettings};
 
 fn main() {
